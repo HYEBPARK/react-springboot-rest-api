@@ -11,31 +11,25 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public class OrderJdbcRepository implements
-    OrderRepository {
+public class OrderJdbcRepository implements OrderRepository {
 
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    public OrderJdbcRepository(
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
+    public OrderJdbcRepository(NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     @Transactional
     public Order insert(Order order) {
-        var update = namedParameterJdbcTemplate.update(
-            "INSERT INTO orders(order_id, email, address, postcode, order_status, created_at, updated_at) "
-                +
-                "VALUES (UUID_TO_BIN(:orderId), :email, :address, :postcode, :order_status, :created_at, :updated_at)",
+        jdbcTemplate.update("INSERT INTO orders(order_id, email, address, postcode, order_status, created_at, updated_at) " +
+                "VALUES (UUID_TO_BIN(:orderId), :email, :address, :postcode, :orderStatus, :createdAt, :updatedAt)",
             toOrderParamMap(order));
-        order.getOrderItems().forEach((orderItem -> namedParameterJdbcTemplate.update(
-            "INSERT INTO order_items(orderId, productId, category, price, quantity, createdAt, updatedAt)"
-                +
-                "VALUES (UUID_TO_BIN(:orderId), UUID_TO_BIN(:productId), :category, :price, :quantity, :createdAt, :updatedAt)",
-            toOrderItemParamMap(order.getOrderId(), order.getCreatedAt(), order.getUpdatedAt(),
-                orderItem))));
-
+        order.getOrderItems()
+            .forEach(item ->
+                jdbcTemplate.update("INSERT INTO order_items(order_id, product_id, category, price, quantity, created_at, updated_at) " +
+                        "VALUES (UUID_TO_BIN(:orderId), UUID_TO_BIN(:productId), :category, :price, :quantity, :createdAt, :updatedAt)",
+                    toOrderItemParamMap(order.getOrderId(), order.getCreatedAt(), order.getUpdatedAt(), item)));
         return order;
     }
 
@@ -48,21 +42,18 @@ public class OrderJdbcRepository implements
         paramMap.put("orderStatus", order.getOrderStatus().toString());
         paramMap.put("createdAt", order.getCreatedAt());
         paramMap.put("updatedAt", order.getUpdatedAt());
-
         return paramMap;
     }
 
-    private Map<String, Object> toOrderItemParamMap(UUID orderId, LocalDateTime createdAt,
-        LocalDateTime updatedAt, OrderItem orderItem) {
+    private Map<String, Object> toOrderItemParamMap(UUID orderId, LocalDateTime createdAt, LocalDateTime updatedAt, OrderItem item) {
         var paramMap = new HashMap<String, Object>();
         paramMap.put("orderId", orderId.toString().getBytes());
-        paramMap.put("productId", orderItem.productId().toString().getBytes());
-        paramMap.put("category", orderItem.category().toString());
-        paramMap.put("price", orderItem.price());
-        paramMap.put("quantity", orderItem.quantity());
+        paramMap.put("productId", item.productId().toString().getBytes());
+        paramMap.put("category", item.category().toString());
+        paramMap.put("price", item.price());
+        paramMap.put("quantity", item.quantity());
         paramMap.put("createdAt", createdAt);
         paramMap.put("updatedAt", updatedAt);
-
         return paramMap;
     }
 }

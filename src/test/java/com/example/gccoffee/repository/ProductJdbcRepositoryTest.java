@@ -11,7 +11,6 @@ import com.example.gccoffee.model.Product;
 import com.wix.mysql.EmbeddedMysql;
 import com.wix.mysql.ScriptResolver;
 import com.wix.mysql.config.Charset;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,8 +53,7 @@ class ProductJdbcRepositoryTest {
     @Autowired
     ProductRepository repository;
 
-    private static final Product newProduct = new Product(UUID.randomUUID(), "new-product",
-        Category.COFFEE_BEAN_PACKAGE, 1000L);
+    private final Product newProduct = new Product(UUID.randomUUID(), "new-product", Category.COFFEE_BEAN_PACKAGE, 1000L);
 
     @Test
     @Order(1)
@@ -76,7 +74,7 @@ class ProductJdbcRepositoryTest {
 
     @Test
     @Order(3)
-    @DisplayName("상품을 아이디로 조회할 수 있다.")
+    @DisplayName("상품을아이디로 조회할 수 있다.")
     void testFindById() {
         var product = repository.findById(newProduct.getProductId());
         assertThat(product.isEmpty(), is(false));
@@ -85,7 +83,7 @@ class ProductJdbcRepositoryTest {
     @Test
     @Order(4)
     @DisplayName("상품들을 카테고리로 조회할 수 있다.")
-    void testFindByCcategory() {
+    void testFindByCategory() {
         var product = repository.findByCategory(Category.COFFEE_BEAN_PACKAGE);
         assertThat(product.isEmpty(), is(false));
     }
@@ -99,8 +97,7 @@ class ProductJdbcRepositoryTest {
 
         var product = repository.findById(newProduct.getProductId());
         assertThat(product.isEmpty(), is(false));
-        assertThat(product.get(), samePropertyValuesAs(newProduct));
-
+        assertThat(product.get().getProductId(), equalTo(newProduct.getProductId()));
     }
 
     @Test
